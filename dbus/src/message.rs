@@ -399,12 +399,28 @@ impl Message {
             .map(|s| unsafe { BusName::from_slice_unchecked(s) })
     }
 
+    /// Sets the message sender
+    ///
+    /// Usually you don't want to call this. The message bus daemon will call it to set the origin of each message.
+    /// If you aren't implementing a message bus daemon you shouldn't need to set the sender.
+    pub fn set_sender(&mut self, sender: Option<BusName>) {
+        let c_sender = sender.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
+        assert_ne!(unsafe { ffi::dbus_message_set_sender(self.msg, c_sender) }, 0);
+    }
+    
     /// Gets the object path this Message is being sent to.
     pub fn path(&self) -> Option<Path> {
         self.msg_internal_str(unsafe { ffi::dbus_message_get_path(self.msg) })
             .map(|s| unsafe { Path::from_slice_unchecked(s) })
     }
 
+    /// Sets the object path this message is being sent to (for MessageType::MethodCall) or the one
+    /// a signal is being emitted from (for MessageType::Signal).
+    pub fn set_path(&mut self, path: Option<Path>) {
+        let c_path = path.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
+        assert_ne!(unsafe { ffi::dbus_message_set_path(self.msg, c_path) }, 0);
+    }
+    
     /// Gets the destination this Message is being sent to.
     pub fn destination(&self) -> Option<BusName> {
         self.msg_internal_str(unsafe { ffi::dbus_message_get_destination(self.msg) })
@@ -416,7 +432,7 @@ impl Message {
     /// If dest is none, that means broadcast to all relevant destinations.
     pub fn set_destination(&mut self, dest: Option<BusName>) {
         let c_dest = dest.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
-        assert!(unsafe { ffi::dbus_message_set_destination(self.msg, c_dest) } != 0);
+        assert_ne!(unsafe { ffi::dbus_message_set_destination(self.msg, c_dest) }, 0);
     }
 
     /// Gets the interface this Message is being sent to.
@@ -425,12 +441,25 @@ impl Message {
             .map(|s| unsafe { Interface::from_slice_unchecked(s) })
     }
 
+    /// Sets the interface this message is being sent to (for MessageType::MethodCall) or the 
+    /// interface a signal is being emitted from (for MessageType::Signal). 
+    pub fn set_interface(&mut self, path: Option<Interface>) {
+        let c_interface = path.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
+        assert_ne!(unsafe { ffi::dbus_message_set_path(self.msg, c_interface) }, 0);
+    }
+    
     /// Gets the interface member being called.
     pub fn member(&self) -> Option<Member> {
         self.msg_internal_str(unsafe { ffi::dbus_message_get_member(self.msg) })
             .map(|s| unsafe { Member::from_slice_unchecked(s) })
     }
 
+    /// Sets the interface member being invoked (MessageType::MethodCall) or emitted (MessageType::Signal). 
+    pub fn set_member(&mut self, path: Option<Path>) {
+        let c_member = path.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
+        assert_ne!(unsafe { ffi::dbus_message_set_path(self.msg, c_member) }, 0);
+    }
+    
     /// When the remote end returns an error, the message itself is
     /// correct but its contents is an error. This method will
     /// transform such an error to a D-Bus Error or otherwise return
@@ -499,16 +528,6 @@ impl Message {
         if data.len() < MIN_HEADER { return Ok(MIN_HEADER); }
         let x = unsafe { ffi::dbus_message_demarshal_bytes_needed(data.as_ptr() as *const _, data.len() as _) };
         if x < MIN_HEADER as _ { Err(()) } else { Ok(x as usize) }
-    }
-
-    /// Sets sender manually - mostly for internal use
-    ///
-    /// When sending a message, a sender will be automatically assigned, so you don't need to call
-    /// this method. However, it can be very useful in test code that is supposed to handle a method call.
-    /// This way, you can create a method call and handle it without reciving it from a real D-Bus instance.
-    pub fn set_sender(&mut self, sender: Option<BusName>) {
-        let c_sender = sender.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
-        assert!(unsafe { ffi::dbus_message_set_sender(self.msg, c_sender) } != 0);
     }
 }
 
