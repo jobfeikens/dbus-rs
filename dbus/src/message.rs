@@ -3,7 +3,7 @@
 use std::{fmt, ptr};
 use super::{ffi, Error, libc, init_dbus};
 use crate::strings::{BusName, Path, Interface, Member, ErrorName};
-use std::ffi::CStr;
+use std::ffi::{c_int, CStr};
 
 use super::arg::{Append, AppendAll, IterAppend, ReadAll, Get, Iter, Arg, RefArg, TypeMismatchError};
 
@@ -53,6 +53,18 @@ pub struct Message {
 unsafe impl Send for Message {}
 
 impl Message {
+    /// Constructs a new message of the given message type.
+    ///
+    /// Usually you want to use new_method_call(), new_method_return() or new_signal() instead.
+    pub fn new(msg_type: MessageType) -> Message {
+        init_dbus();
+        let ptr = unsafe {
+            ffi::dbus_message_new(msg_type as c_int)
+        };
+        if ptr.is_null() { panic!("D-Bus error: dbus_message_new failed") }
+        Message { msg: ptr }
+    }
+
     /// Creates a new method call message.
     pub fn new_method_call<'d, 'p, 'i, 'm, D, P, I, M>(destination: D, path: P, iface: I, method: M) -> Result<Message, String>
     where D: Into<BusName<'d>>, P: Into<Path<'p>>, I: Into<Interface<'i>>, M: Into<Member<'m>> {
