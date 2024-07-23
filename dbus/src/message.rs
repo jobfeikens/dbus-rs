@@ -182,12 +182,28 @@ impl Message {
         if x == 0 { None } else { Some(x) }
     }
 
+    /// Sets the serial number of a message.
+    /// 
+    /// This can only be done once on a message.
+    ///
+    /// DBusConnection will automatically set the serial to an appropriate value when the message is sent; 
+    /// this function is only needed when encapsulating messages in another protocol, or otherwise 
+    /// bypassing DBusConnection.
+    pub fn set_serial(&mut self, val: u32) {
+        unsafe { ffi::dbus_message_set_serial(self.msg, val) };
+    }
+    
     /// Get the serial of the message this message is a reply to, if present.
     pub fn get_reply_serial(&self) -> Option<u32> {
         let s = unsafe { ffi::dbus_message_get_reply_serial(self.msg) };
         if s == 0 { None } else { Some(s) }
     }
 
+    /// Sets the reply serial of a message (the serial of the message this is a reply to). 
+    pub fn set_reply_serial(&self, reply_serial: u32) {
+        assert_ne!(unsafe { ffi::dbus_message_set_reply_serial(self.msg, reply_serial) }, 0);
+    }
+    
     /// Returns true if the message does not expect a reply.
     pub fn get_no_reply(&self) -> bool { unsafe { ffi::dbus_message_get_no_reply(self.msg) != 0 } }
 
@@ -482,16 +498,7 @@ impl Message {
         }
         Message { msg: ptr }
     }
-
-    /// Sets serial number manually - mostly for internal use
-    ///
-    /// When sending a message, a serial will be automatically assigned, so you don't need to call
-    /// this method. However, it can be very useful in test code that is supposed to handle a method call.
-    /// This way, you can create a method call and handle it without sending it to a real D-Bus instance.
-    pub fn set_serial(&mut self, val: u32) {
-        unsafe { ffi::dbus_message_set_serial(self.msg, val) };
-    }
-
+    
     /// Marshals a message - mostly for internal use
     ///
     /// The function f will be called one or more times with bytes to be written somewhere.
