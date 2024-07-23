@@ -61,7 +61,11 @@ impl Message {
         let ptr = unsafe {
             ffi::dbus_message_new(msg_type as c_int)
         };
+<<<<<<< HEAD
         if ptr.is_null() { panic!("D-Bus error: dbus_message_new failed") }
+=======
+        if ptr.is_null() { panic!("D-Bus error: dbus_message_new_method_call failed") }
+>>>>>>> 90b57ef (Add Message::new method)
         Message { msg: ptr }
     }
 
