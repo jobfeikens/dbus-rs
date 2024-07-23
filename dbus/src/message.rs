@@ -455,7 +455,7 @@ impl Message {
     }
 
     /// Sets the interface member being invoked (MessageType::MethodCall) or emitted (MessageType::Signal). 
-    pub fn set_member(&mut self, path: Option<Path>) {
+    pub fn set_member(&mut self, path: Option<Member>) {
         let c_member = path.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
         assert_ne!(unsafe { ffi::dbus_message_set_path(self.msg, c_member) }, 0);
     }
