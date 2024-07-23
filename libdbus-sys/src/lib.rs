@@ -223,6 +223,7 @@ extern "C" {
     pub fn dbus_set_error(error: *mut DBusError, name: *const c_char, message: *const c_char, ...);
     pub fn dbus_set_error_from_message(error: *mut DBusError, message: *mut DBusMessage) -> u32;
 
+    pub fn dbus_message_new(message_type: c_int) -> *mut DBusMessage;
     pub fn dbus_message_new_method_call(destination: *const c_char, path: *const c_char,
         iface: *const c_char, method: *const c_char) -> *mut DBusMessage;
     pub fn dbus_message_new_method_return(message: *mut DBusMessage) -> *mut DBusMessage;
