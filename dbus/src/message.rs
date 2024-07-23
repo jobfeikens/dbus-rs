@@ -183,27 +183,27 @@ impl Message {
     }
 
     /// Sets the serial number of a message.
-    /// 
+    ///
     /// This can only be done once on a message.
     ///
-    /// DBusConnection will automatically set the serial to an appropriate value when the message is sent; 
-    /// this function is only needed when encapsulating messages in another protocol, or otherwise 
+    /// DBusConnection will automatically set the serial to an appropriate value when the message is sent;
+    /// this function is only needed when encapsulating messages in another protocol, or otherwise
     /// bypassing DBusConnection.
     pub fn set_serial(&mut self, val: u32) {
         unsafe { ffi::dbus_message_set_serial(self.msg, val) };
     }
-    
+
     /// Get the serial of the message this message is a reply to, if present.
     pub fn get_reply_serial(&self) -> Option<u32> {
         let s = unsafe { ffi::dbus_message_get_reply_serial(self.msg) };
         if s == 0 { None } else { Some(s) }
     }
 
-    /// Sets the reply serial of a message (the serial of the message this is a reply to). 
+    /// Sets the reply serial of a message (the serial of the message this is a reply to).
     pub fn set_reply_serial(&self, reply_serial: u32) {
         assert_ne!(unsafe { ffi::dbus_message_set_reply_serial(self.msg, reply_serial) }, 0);
     }
-    
+
     /// Returns true if the message does not expect a reply.
     pub fn get_no_reply(&self) -> bool { unsafe { ffi::dbus_message_get_no_reply(self.msg) != 0 } }
 
@@ -423,7 +423,7 @@ impl Message {
         let c_sender = sender.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
         assert_ne!(unsafe { ffi::dbus_message_set_sender(self.msg, c_sender) }, 0);
     }
-    
+
     /// Gets the object path this Message is being sent to.
     pub fn path(&self) -> Option<Path> {
         self.msg_internal_str(unsafe { ffi::dbus_message_get_path(self.msg) })
@@ -436,7 +436,7 @@ impl Message {
         let c_path = path.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
         assert_ne!(unsafe { ffi::dbus_message_set_path(self.msg, c_path) }, 0);
     }
-    
+
     /// Gets the destination this Message is being sent to.
     pub fn destination(&self) -> Option<BusName> {
         self.msg_internal_str(unsafe { ffi::dbus_message_get_destination(self.msg) })
@@ -457,25 +457,37 @@ impl Message {
             .map(|s| unsafe { Interface::from_slice_unchecked(s) })
     }
 
-    /// Sets the interface this message is being sent to (for MessageType::MethodCall) or the 
-    /// interface a signal is being emitted from (for MessageType::Signal). 
+    /// Sets the interface this message is being sent to (for MessageType::MethodCall) or the
+    /// interface a signal is being emitted from (for MessageType::Signal).
     pub fn set_interface(&mut self, path: Option<Interface>) {
         let c_interface = path.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
         assert_ne!(unsafe { ffi::dbus_message_set_path(self.msg, c_interface) }, 0);
     }
-    
+
     /// Gets the interface member being called.
     pub fn member(&self) -> Option<Member> {
         self.msg_internal_str(unsafe { ffi::dbus_message_get_member(self.msg) })
             .map(|s| unsafe { Member::from_slice_unchecked(s) })
     }
 
-    /// Sets the interface member being invoked (MessageType::MethodCall) or emitted (MessageType::Signal). 
+    /// Sets the interface member being invoked (MessageType::MethodCall) or emitted (MessageType::Signal).
     pub fn set_member(&mut self, path: Option<Member>) {
         let c_member = path.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
         assert_ne!(unsafe { ffi::dbus_message_set_path(self.msg, c_member) }, 0);
     }
-    
+
+    /// Gets the error name (if MessageType::Error) or None.
+    pub fn error_name(&self) -> Option<ErrorName> {
+        self.msg_internal_str(unsafe { ffi::dbus_message_get_error_name(self.msg) })
+            .map(|s| unsafe { ErrorName::from_slice_unchecked(s) })
+    }
+
+    /// Sets the name of the error (for MessageType::Error). 
+    pub fn set_error_name(&mut self, error_name: Option<ErrorName>) {
+        let c_error_name = error_name.as_ref().map(|d| d.as_cstr().as_ptr()).unwrap_or(ptr::null());
+        assert_ne!(unsafe { ffi::dbus_message_set_error_name(self.msg, c_error_name) }, 0);
+    }
+
     /// When the remote end returns an error, the message itself is
     /// correct but its contents is an error. This method will
     /// transform such an error to a D-Bus Error or otherwise return
@@ -498,7 +510,7 @@ impl Message {
         }
         Message { msg: ptr }
     }
-    
+
     /// Marshals a message - mostly for internal use
     ///
     /// The function f will be called one or more times with bytes to be written somewhere.

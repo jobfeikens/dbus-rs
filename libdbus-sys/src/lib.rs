@@ -246,6 +246,8 @@ extern "C" {
     pub fn dbus_message_get_destination(message: *mut DBusMessage) -> *const c_char;
     pub fn dbus_message_get_member(message: *mut DBusMessage) -> *const c_char;
     pub fn dbus_message_set_member(message: *mut DBusMessage, member: *const c_char) -> u32;
+    pub fn dbus_message_get_error_name(message: *mut DBusMessage) -> *const c_char;
+    pub fn dbus_message_set_error_name(message: *mut DBusMessage, error_name: *const c_char) -> u32;
     pub fn dbus_message_get_sender(message: *mut DBusMessage) -> *const c_char;
     pub fn dbus_message_set_serial(message: *mut DBusMessage, serial: u32);
     pub fn dbus_message_set_sender(message: *mut DBusMessage, sender: *const c_char) -> u32;
