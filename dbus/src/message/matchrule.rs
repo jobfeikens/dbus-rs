@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+use std::collections::HashMap;
 use crate::{Message, MessageType};
 use crate::strings::{BusName, Path, Interface, Member};
 use crate::message::parser;
@@ -24,6 +26,8 @@ pub struct MatchRule<'a> {
     pub member: Option<Member<'a>>,
     /// If true, also receive messages not intended for us. Defaults to false.
     pub eavesdrop: bool,
+    /// Match on message arguments (only string arguments will match)
+    pub args: HashMap<usize, String>,
     _more_fields_may_come: (),
 }
 
@@ -42,13 +46,16 @@ impl<'a> MatchRule<'a> {
     /// Make a string which you can use in the call to "add_match".
     pub fn match_str(&self) -> String {
         let mut v = vec!();
-        if let Some(x) = self.msg_type { v.push(("type", msg_type_str(x))) };
-        if let Some(ref x) = self.sender { v.push(("sender", &x)) };
+        if let Some(x) = self.msg_type { v.push((Cow::Borrowed("type"), msg_type_str(x))) };
+        if let Some(ref x) = self.sender { v.push((Cow::Borrowed("sender"), &x)) };
         let pn = if self.path_is_namespace { "path_namespace" } else { "path" };
-        if let Some(ref x) = self.path { v.push((pn, &x)) };
-        if let Some(ref x) = self.interface { v.push(("interface", &x)) };
-        if let Some(ref x) = self.member { v.push(("member", &x)) };
-        if self.eavesdrop { v.push(("eavesdrop", "true")) };
+        if let Some(ref x) = self.path { v.push((Cow::Borrowed(pn), &x)) };
+        if let Some(ref x) = self.interface { v.push((Cow::Borrowed("interface"), &x)) };
+        if let Some(ref x) = self.member { v.push((Cow::Borrowed("member"), &x)) };
+        if self.eavesdrop { v.push((Cow::Borrowed("eavesdrop"), "true")) };
+        for (arg, value) in &self.args {
+            v.push((Cow::Owned(format!("arg{}", arg)), value));
+        }
 
         // For now we don't need to worry about internal quotes in strings as those are not valid names.
         // If we start matching against arguments, we need to worry.
@@ -114,6 +121,7 @@ impl<'a> MatchRule<'a> {
             member: self.member.as_ref().map(|x| x.clone().into_static()),
             path_is_namespace: self.path_is_namespace,
             eavesdrop: self.eavesdrop,
+            args: self.args.clone(),
             _more_fields_may_come: (),
         }
     }
