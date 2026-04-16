@@ -177,6 +177,14 @@ impl<'a> MatchRule<'a> {
         self
     }
 
+    /// Sets the MatchRule to match on an argument.
+    /// Function will panic when index is set to a value greater than DBUS_MAXIMUM_MATCH_RULE_ARG_NUMBER (63).
+    pub fn with_arg(mut self, index: usize, value: impl Into<String>) -> Self {
+        assert!(index <= 63);
+        self.args.insert(index, value.into());
+        self
+    }
+
     /// Tries parsing a MatchRule from a String. Please note however that not all features supported
     /// by DBus are supported by dbus-rs (yet). args and destinations are not supported yet.
     pub fn parse(text: &'a str) -> Result<Self, parser::Error> {
